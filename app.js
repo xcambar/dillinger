@@ -83,7 +83,7 @@ app.configure('production', function(){
 
 // Routes
 
-app.get('/', function(req, res, next){
+app.get('/blog/admin', function(req, res, next){
   
   if(typeof req.session.oauth !== 'undefined' && typeof req.session.oauth.github !== 'undefined'){
     
@@ -153,7 +153,7 @@ app.get('/', function(req, res, next){
   
 })
 
-app.get('/oauth/github', function(req, res, next){
+app.get('/blog/admin/oauth/github', function(req, res, next){
 
   if(!req.query.code) next()
   else{
@@ -183,7 +183,7 @@ app.get('/oauth/github', function(req, res, next){
           var token = s[1].replace('&token_type', '')
           req.session.oauth.github = token
           req.session.oauth.username = ''
-          res.redirect('/')
+          res.redirect('/blog/admin')
         }
       })
     
@@ -191,7 +191,7 @@ app.get('/oauth/github', function(req, res, next){
     
 })
 
-app.get('/oauth/test/github', function(req, res){
+app.get('/blog/admin/oauth/test/github', function(req, res){
 
   res.render('test_oauth_github', {
     title: 'Dillinger, the last Markdown editor, ever. By Joe McCann',
@@ -202,7 +202,7 @@ app.get('/oauth/test/github', function(req, res){
 
 })
 
-app.post('/github/repo/fetch_all', function(req,res){
+app.post('/blog/admin/github/repo/fetch_all', function(req,res){
   
   var github_url = github_api + 'user/repos?access_token=' + req.session.oauth.github
   
@@ -241,7 +241,7 @@ app.post('/github/repo/fetch_all', function(req,res){
   
 })
 
-app.post('/github/repo/fetch_branches', function(req,res){
+app.post('/blog/admin/github/repo/fetch_branches', function(req,res){
   
   var github_url = github_api 
                     + 'repos/' 
@@ -269,7 +269,7 @@ app.post('/github/repo/fetch_branches', function(req,res){
   
 })
 
-app.post('/github/repo/fetch_tree_files', function(req,res){
+app.post('/blog/admin/github/repo/fetch_tree_files', function(req,res){
   // /repos/:user/:repo/git/trees/:sha
     
   var github_url = github_api 
@@ -303,7 +303,7 @@ app.post('/github/repo/fetch_tree_files', function(req,res){
   
 })
 
-app.post('/github/repo/fetch_markdown_file', function(req,res){
+app.post('/blog/admin/github/repo/fetch_markdown_file', function(req,res){
   
   var url = req.body.mdFile
     , isPrivateRepo = /blob/.test(url)
@@ -349,7 +349,7 @@ app.post('/github/repo/fetch_markdown_file', function(req,res){
 
 
 // save a markdown file and send header to download it directly as response 
-app.post('/factory/fetch_markdown', function(req,res){
+app.post('/blog/admin/factory/fetch_markdown', function(req,res){
   
   var unmd = req.body.unmd
     , json_response = 
@@ -380,7 +380,7 @@ app.post('/factory/fetch_markdown', function(req,res){
 }) // end post
 
 // save a html file and send header to download it directly as response 
-app.post('/factory/fetch_html', function(req,res){
+app.post('/blog/admin/factory/fetch_html', function(req,res){
   
   var unmd = req.body.unmd
     , json_response = 
@@ -413,7 +413,7 @@ app.post('/factory/fetch_html', function(req,res){
 
 
 // route to handle download of md file
-app.get('/files/md/:mdid', function(req, res){
+app.get('/blog/admin/files/md/:mdid', function(req, res){
   
   var fileId = req.params.mdid
   
@@ -434,7 +434,7 @@ app.get('/files/md/:mdid', function(req, res){
 })
 
 // route to handle download of html file
-app.get('/files/html/:html', function(req, res){
+app.get('/blog/admin/files/html/:html', function(req, res){
   
   var fileId = req.params.html
   
@@ -452,17 +452,6 @@ app.get('/files/html/:html', function(req, res){
   })
 
 })
-
-
-// TODO: ADD THESE LATER? Nah, fuck it, Github is good enough.
-app.get('/oauth/facebook', function(req,res){
-  res.send('Not implemented yet.')
-})
-
-app.get('/oauth/twitter', function(req,res){
-  res.send('Not implemented yet.')  
-})
-
 
 
 // Method that reads in the main stylus file and rewrites it with either 

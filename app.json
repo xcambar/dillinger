@@ -11,7 +11,7 @@
     "dillinger": ["./public/css/dillinger.css"]
   },
   "DEBUG": false,
-  "PORT": 80,
+  "PORT": 8080,
   "LOCALHOST": false,
   "IMAGE_PREFIX_DEBUG": "/img/",
   "IMAGE_PREFIX_PRODUCTION": "http://cdn.dillinger.io/",

@@ -439,7 +439,7 @@ $(function(){
     function _doneHandler(jqXHR, data, response){
       // console.dir(resp)
       var resp = JSON.parse(response.responseText)
-      document.getElementById('downloader').src = '/files/md/' + resp.data
+      document.getElementById('downloader').src = '/blog/admin/files/md/' + resp.data
     }
 
     function _failHandler(jqXHR, errorString, err){
@@ -452,7 +452,7 @@ $(function(){
                       type: 'POST',
                       data: "unmd=" + encodeURIComponent(unmd),
                       dataType: 'json',
-                      url: '/factory/fetch_markdown',
+                      url: '/blog/admin/factory/fetch_markdown',
                       beforeSend: _beforeSendHandler,
                       error: _failHandler,
                       success: _doneHandler,
@@ -478,7 +478,7 @@ $(function(){
     function _doneHandler(jqXHR, data, response){
       // console.dir(resp)
       var resp = JSON.parse(response.responseText)
-      document.getElementById('downloader').src = '/files/html/' + resp.data
+      document.getElementById('downloader').src = '/blog/admin/files/html/' + resp.data
     }
 
     function _failHandler(jqXHR, errorString, err){
@@ -491,7 +491,7 @@ $(function(){
                       type: 'POST',
                       data: "unmd=" + encodeURIComponent(unmd),
                       dataType: 'json',
-                      url: '/factory/fetch_html',
+                      url: '/blog/admin/factory/fetch_html',
                       beforeSend: _beforeSendHandler,
                       error: _failHandler,
                       success: _doneHandler,
@@ -985,7 +985,7 @@ $(function(){
         var config = {
                         type: 'POST',
                         dataType: 'text',
-                        url: '/github/repo/fetch_all',
+                        url: '/blog/admin/github/repo/fetch_all',
                         beforeSend: _beforeSendHandler,
                         error: _failHandler,
                         success: _doneHandler,
@@ -1023,7 +1023,7 @@ $(function(){
                         type: 'POST',
                         dataType: 'json',
                         data: 'repo=' + repoName,
-                        url: '/github/repo/fetch_branches',
+                        url: '/blog/admin/github/repo/fetch_branches',
                         beforeSend: _beforeSendHandler,
                         error: _failHandler,
                         success: _doneHandler,
@@ -1062,7 +1062,7 @@ $(function(){
                         type: 'POST',
                         dataType: 'json',
                         data: 'repo=' + repoName + '&sha=' + sha,
-                        url: '/github/repo/fetch_tree_files',
+                        url: '/blog/admin/github/repo/fetch_tree_files',
                         beforeSend: _beforeSendHandler,
                         error: _failHandler,
                         success: _doneHandler,
@@ -1105,7 +1105,7 @@ $(function(){
                         type: 'POST',
                         dataType: 'json',
                         data: 'mdFile=' + filename,
-                        url: '/github/repo/fetch_markdown_file',
+                        url: '/blog/admin/github/repo/fetch_markdown_file',
                         beforeSend: _beforeSendHandler,
                         error: _failHandler,
                         success: _doneHandler,
