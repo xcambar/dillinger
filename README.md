@@ -1,4 +1,4 @@
-Dillinger
+Dillinger (Blog Branch)
 =========
 
 Dillinger is a cloud-enabled HTML5 Markdown editor.
@@ -42,6 +42,12 @@ Dillinger has a number of features in the works.  Just trust me.
 
 Installation
 --------------
+
+The following installation is for someone wanting to use Dillinger 
+as a markdown editor for a blog or for some sort of composer or
+editor that is meant for administrative purposes.  There are 
+some differences between this version and the master branch.
+
 
 NOTE: currently the `app.js` file expects a Redis instance to be up and running and available.  It is used for session storage and will be used in the future.
 

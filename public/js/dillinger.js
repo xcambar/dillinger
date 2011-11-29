@@ -12,6 +12,7 @@ $(function(){
       theme: 'ace/theme/clouds_midnight'
     , showPaper: true
     , currentMd: ''
+    , filename: ''
     , autosave: 
       {
         enabled: true
@@ -34,7 +35,10 @@ $(function(){
     , $toggleNav = $('#toggleNav')
     , $github_profile = $('#github_profile')
     , $nav = $('nav')
+    , $filename = $('#filename')
 
+  // Because dillinger is not running in the root of the web server
+  var routePrefix = 'blog/admin'
     
   // Hash of themes and their respective background colors
   var bgColors = 
@@ -137,6 +141,9 @@ $(function(){
   function updateUserProfile(obj){
     localStorage.clear()
     localStorage['profile'] = JSON.stringify( $.extend(true, profile, obj) )
+    // Call this after each update so local profile object is up to date.
+    // Possibly overkill, maybe only call if optional flag is passed?
+    getUserProfile()
   }
 
   /**
@@ -282,11 +289,13 @@ $(function(){
     $theme.find('option[value="'+ profile.theme +'"]').attr('selected', true)
 
     // Set/unset paper background image on preview
-    // TODO: FIX THIS BUG
     $preview.css('backgroundImage', profile.showPaper ? 'url("'+paperImgPath+'")' : 'url("")' )
     
     // Set text for dis/enable autosave
     $autosave.text( profile.autosave.enabled ? 'Disable Autosave' : 'Enable Autosave' )
+    
+    // Set filename
+    $filename.val( profile.filename )
     
     // Check for logged in Github user and notifiy
     githubUser = $github_profile.attr('data-github-user')
@@ -320,12 +329,31 @@ $(function(){
    */
   function saveFile(isManual){
     
-    updateUserProfile({currentMd: editor.getSession().getValue()})
-    
-    isManual && Notifier.showMessage(Notifier.messages.docSavedLocal)
+    if( isManual ){
+      if( $filename.is(':focus') ) return
+      Remote.saveFile()
+    }
+    else{
+      updateUserProfile({currentMd: editor.getSession().getValue()})      
+    }
   
   }
+
+  /**
+   * Save the filename in the user's profile.
+   *
+   * @return {Void}
+   */
+  function saveFilename(){
+
+    var name = $filename.val() || ''
+
+    updateUserProfile({filename: name})
+
+    name && Notifier.showMessage(Notifier.messages.filenameSaved)
   
+  }
+
   /**
    * Enable autosave for a specific interval.
    *
@@ -439,7 +467,7 @@ $(function(){
     function _doneHandler(jqXHR, data, response){
       // console.dir(resp)
       var resp = JSON.parse(response.responseText)
-      document.getElementById('downloader').src = '/blog/admin/files/md/' + resp.data
+      document.getElementById('downloader').src = '/' + routePrefix + '/files/md/' + resp.data
     }
 
     function _failHandler(jqXHR, errorString, err){
@@ -452,7 +480,7 @@ $(function(){
                       type: 'POST',
                       data: "unmd=" + encodeURIComponent(unmd),
                       dataType: 'json',
-                      url: '/blog/admin/factory/fetch_markdown',
+                      url: '/' + routePrefix + '/factory/fetch_markdown',
                       beforeSend: _beforeSendHandler,
                       error: _failHandler,
                       success: _doneHandler,
@@ -478,7 +506,7 @@ $(function(){
     function _doneHandler(jqXHR, data, response){
       // console.dir(resp)
       var resp = JSON.parse(response.responseText)
-      document.getElementById('downloader').src = '/blog/admin/files/html/' + resp.data
+      document.getElementById('downloader').src = '/' + routePrefix + '/files/html/' + resp.data
     }
 
     function _failHandler(jqXHR, errorString, err){
@@ -491,7 +519,7 @@ $(function(){
                       type: 'POST',
                       data: "unmd=" + encodeURIComponent(unmd),
                       dataType: 'json',
-                      url: '/blog/admin/factory/fetch_html',
+                      url: '/' + routePrefix + '/factory/fetch_html',
                       beforeSend: _beforeSendHandler,
                       error: _failHandler,
                       success: _doneHandler,
@@ -719,16 +747,11 @@ $(function(){
         return false
       })
 
-    // $('#modal-from-dom').bind('shown', function () {
-    //   // do stuff
-    // })
-    //   
-    // $('#modal-from-dom').bind('hidden', function () {
-    //   // do stuff
-    // })
-
+    $filename.
+      on('blur', function(){
+        saveFilename()
+      })
       
-    
   } // end bindNav()
 
   /**
@@ -794,6 +817,54 @@ $(function(){
 
   /// MODULES =================
 
+  // Notification Module
+  var Remote = (function(){
+      
+      function _getFileName(){
+        return encodeURIComponent( profile.filename )
+      }
+    
+      return {
+        saveFile: function(){
+          
+          function _beforeSendHandler(jqXHR, data){}
+
+          function _doneHandler(jqXHR, data, response){
+            response = response.responseText
+            // console.dir(response)
+            if( response.error ) Notifier.showMessage('Save unsuccessful!')
+            else { Notifier.showMessage(Notifier.messages.docSavedServer) } // end else
+          } // end done handler
+
+          function _failHandler(jqXHR, errorString, err){
+            alert("Roh-roh. Something went wrong with the remote save. :(")
+          }
+
+          function _alwaysHandler(jqXHR, data){}
+
+          var unmd = encodeURIComponent( editor.getSession().getValue() )
+          
+          var filename = _getFileName()
+          
+          // TODO: UPDATE FILENAME
+
+          var config = {
+                          type: 'POST',
+                          data: "unmd=" + unmd + "&filename=" + filename,
+                          dataType: 'json',
+                          url: '/' + routePrefix + '/factory/save_md',
+                          beforeSend: _beforeSendHandler,
+                          error: _failHandler,
+                          success: _doneHandler,
+                          complete: _alwaysHandler
+                        }
+
+          $.ajax(config)  
+
+          } // end showMesssage
+      } // end return obj
+  })() // end IIFE
+
 
   // Notification Module
   var Notifier = (function(){
@@ -801,11 +872,14 @@ $(function(){
     var _el = $('#notify')      
     
       return {
-        messages: {
+        messages: 
+        {
           profileUpdated: "Profile updated"
-          , profileCleared: "Profile cleared"
-          , docSavedLocal: "Document saved locally"
-          , docSavedServer: "Document saved on our server"
+        , profileCleared: "Profile cleared"
+        , filenameSaved: "Filename saved"
+        , docSavedLocal: "Document saved locally"
+        , docSavedServer: "Document saved on our server"
+        , docSavedBoth: "Document saved locally and remotely"
         },
         showMessage: function(msg,delay){
           
@@ -985,7 +1059,7 @@ $(function(){
         var config = {
                         type: 'POST',
                         dataType: 'text',
-                        url: '/blog/admin/github/repo/fetch_all',
+                        url: '/' + routePrefix + '/github/repo/fetch_all',
                         beforeSend: _beforeSendHandler,
                         error: _failHandler,
                         success: _doneHandler,
@@ -1023,7 +1097,7 @@ $(function(){
                         type: 'POST',
                         dataType: 'json',
                         data: 'repo=' + repoName,
-                        url: '/blog/admin/github/repo/fetch_branches',
+                        url: '/' + routePrefix + '/github/repo/fetch_branches',
                         beforeSend: _beforeSendHandler,
                         error: _failHandler,
                         success: _doneHandler,
@@ -1062,7 +1136,7 @@ $(function(){
                         type: 'POST',
                         dataType: 'json',
                         data: 'repo=' + repoName + '&sha=' + sha,
-                        url: '/blog/admin/github/repo/fetch_tree_files',
+                        url: '/' + routePrefix + '/github/repo/fetch_tree_files',
                         beforeSend: _beforeSendHandler,
                         error: _failHandler,
                         success: _doneHandler,
@@ -1105,7 +1179,7 @@ $(function(){
                         type: 'POST',
                         dataType: 'json',
                         data: 'mdFile=' + filename,
-                        url: '/blog/admin/github/repo/fetch_markdown_file',
+                        url: '/' + routePrefix + '/github/repo/fetch_markdown_file',
                         beforeSend: _beforeSendHandler,
                         error: _failHandler,
                         success: _doneHandler,

@@ -16,3 +16,13 @@ To obtain the `client_id` and the `client_secret` you'll need to register your a
 
 
   [Github App]: https://github.com/account/applications/new
+
+
+Blog Server Config
+=========
+
+Here is where you will add things that are specific to your server for your blog.  Currently, you need to set the port:
+
+  {
+    "blog_port": 1337
+  }

@@ -4,7 +4,6 @@ var express = require('express')
   , util = require('util')
   , exec = require('child_process').exec
   , stylus = require('stylus')
-  , fs = require('fs')
   , smoosh = require('smoosh')
   , cluster = require('cluster')
   , path = require('path')
@@ -24,8 +23,13 @@ var appConfig = JSON.parse(fs.readFileSync(__dirname + '/app.json', 'UTF-8'))
 
 var githubConfig = JSON.parse(fs.readFileSync(__dirname + '/config/github.json', 'UTF-8'))
 
+var serverConfig = JSON.parse(fs.readFileSync(__dirname + '/config/server.json', 'UTF-8'))
+
 var dillingerReadme = fs.readFileSync(__dirname + '/README.md', 'UTF-8')
 
+// If dillinger is not running in the root of your webserver, then we need to update some paths
+var rootpath = '../..'
+  , routePrefix = 'blog/admin'
 
 var app = module.exports = express.createServer()
 
@@ -38,12 +42,8 @@ if(appConfig.DEBUG){
   
 }
 
-// If hacking on localhost/local machine
-if(appConfig.LOCALHOST){
-
-   appConfig.PORT = debug ? 5050 : appConfig.PORT
- 
-}
+// Set to blog_port for production
+appConfig.PORT = debug ? 5051 : serverConfig.blog_port
 
 // Initialize Redis connection
 initRedis()
@@ -66,11 +66,10 @@ app.configure(function(){
   app.use(express.static(__dirname + '/public'));
 });
 
-app.dynamicHelpers({
-  readme: function(req,res){
-    return dillingerReadme.toString() 
-  }
-})
+app.dynamicHelpers(
+  { 
+    readme: function(req,res){ return dillingerReadme.toString()} 
+  })
 
 
 app.configure('development', function(){
@@ -83,7 +82,7 @@ app.configure('production', function(){
 
 // Routes
 
-app.get('/blog/admin', function(req, res, next){
+app.get('/'+routePrefix, function(req, res, next){
   
   if(typeof req.session.oauth !== 'undefined' && typeof req.session.oauth.github !== 'undefined'){
     
@@ -153,7 +152,7 @@ app.get('/blog/admin', function(req, res, next){
   
 })
 
-app.get('/blog/admin/oauth/github', function(req, res, next){
+app.get('/' + routePrefix + '/oauth/github', function(req, res, next){
 
   if(!req.query.code) next()
   else{
@@ -183,7 +182,7 @@ app.get('/blog/admin/oauth/github', function(req, res, next){
           var token = s[1].replace('&token_type', '')
           req.session.oauth.github = token
           req.session.oauth.username = ''
-          res.redirect('/blog/admin')
+          res.redirect('/' + routePrefix )
         }
       })
     
@@ -191,7 +190,7 @@ app.get('/blog/admin/oauth/github', function(req, res, next){
     
 })
 
-app.get('/blog/admin/oauth/test/github', function(req, res){
+app.get('/' + routePrefix + '/oauth/test/github', function(req, res){
 
   res.render('test_oauth_github', {
     title: 'Dillinger, the last Markdown editor, ever. By Joe McCann',
@@ -202,7 +201,7 @@ app.get('/blog/admin/oauth/test/github', function(req, res){
 
 })
 
-app.post('/blog/admin/github/repo/fetch_all', function(req,res){
+app.post('/' + routePrefix + '/github/repo/fetch_all', function(req,res){
   
   var github_url = github_api + 'user/repos?access_token=' + req.session.oauth.github
   
@@ -241,7 +240,7 @@ app.post('/blog/admin/github/repo/fetch_all', function(req,res){
   
 })
 
-app.post('/blog/admin/github/repo/fetch_branches', function(req,res){
+app.post('/' + routePrefix + '/github/repo/fetch_branches', function(req,res){
   
   var github_url = github_api 
                     + 'repos/' 
@@ -269,7 +268,7 @@ app.post('/blog/admin/github/repo/fetch_branches', function(req,res){
   
 })
 
-app.post('/blog/admin/github/repo/fetch_tree_files', function(req,res){
+app.post('/' + routePrefix + '/github/repo/fetch_tree_files', function(req,res){
   // /repos/:user/:repo/git/trees/:sha
     
   var github_url = github_api 
@@ -303,7 +302,7 @@ app.post('/blog/admin/github/repo/fetch_tree_files', function(req,res){
   
 })
 
-app.post('/blog/admin/github/repo/fetch_markdown_file', function(req,res){
+app.post('/' + routePrefix + '/github/repo/fetch_markdown_file', function(req,res){
   
   var url = req.body.mdFile
     , isPrivateRepo = /blob/.test(url)
@@ -349,7 +348,7 @@ app.post('/blog/admin/github/repo/fetch_markdown_file', function(req,res){
 
 
 // save a markdown file and send header to download it directly as response 
-app.post('/blog/admin/factory/fetch_markdown', function(req,res){
+app.post('/' + routePrefix + '/factory/fetch_markdown', function(req,res){
   
   var unmd = req.body.unmd
     , json_response = 
@@ -380,7 +379,7 @@ app.post('/blog/admin/factory/fetch_markdown', function(req,res){
 }) // end post
 
 // save a html file and send header to download it directly as response 
-app.post('/blog/admin/factory/fetch_html', function(req,res){
+app.post('/' + routePrefix + '/factory/fetch_html', function(req,res){
   
   var unmd = req.body.unmd
     , json_response = 
@@ -413,7 +412,7 @@ app.post('/blog/admin/factory/fetch_html', function(req,res){
 
 
 // route to handle download of md file
-app.get('/blog/admin/files/md/:mdid', function(req, res){
+app.get('/' + routePrefix + '/files/md/:mdid', function(req, res){
   
   var fileId = req.params.mdid
   
@@ -434,7 +433,7 @@ app.get('/blog/admin/files/md/:mdid', function(req, res){
 })
 
 // route to handle download of html file
-app.get('/blog/admin/files/html/:html', function(req, res){
+app.get('/' + routePrefix + '/files/html/:html', function(req, res){
   
   var fileId = req.params.html
   
@@ -453,6 +452,39 @@ app.get('/blog/admin/files/html/:html', function(req, res){
 
 })
 
+// This route actually saves file in a particular directory.
+// This directory is where your main app should look for the
+// md files to render, extract, etc.  You need to see this 
+// path. Here it is set to: "../../posts/"
+app.post('/' + routePrefix + '/factory/save_md', function(req,res){
+
+  var unmd = req.body.unmd
+    , json_response = 
+    {
+      data: ''
+    , error: false
+    }
+      
+  var name = ( req.body.filename || md.generateRandomMdFilename('.md') ).replace(/\s/g, '-').toLowerCase()
+  
+  var filename = ( rootpath + '/posts/' + name  + '.md' )
+  
+  fs.writeFile( filename, unmd, 'utf8', function(err, data){
+
+    if(err){
+      json_response.error = true
+      json_response.data = "Something wrong with the file saving."
+      res.json( json_response )
+      throw err     
+    }
+    else{
+      json_response.data = name
+      res.json( json_response )
+     }
+  }) // end writeFile
+  
+  
+})
 
 // Method that reads in the main stylus file and rewrites it with either 
 // the cdn or local (debug) prefix for background images. 
