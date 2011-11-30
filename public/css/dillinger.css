@@ -2678,7 +2678,7 @@ nav {
   font-size: 0;
 }
 #settings {
-  background: url("/img/h_bedf916a.png");
+  background: url("http://cdn.dillinger.io/h_bedf916a.png");
   background-position: 0 0;
   display: block;
   font-size: 0;
@@ -2787,7 +2787,7 @@ nav {
   float: none;
 }
 .inner_one {
-  background: url("/img/sprite_black2.png") no-repeat 0 -21px;
+  background: url("http://cdn.dillinger.io/sprite_black2.png") no-repeat 0 -21px;
   height: 21px;
   width: 21px;
   margin-top: -3px;
@@ -2806,7 +2806,7 @@ nav {
   opacity: 0.55;
   margin-top: -3px;
   vertical-align: middle;
-  background: url("/img/arrow_down.png") no-repeat 0 1px;
+  background: url("http://cdn.dillinger.io/arrow_down.png") no-repeat 0 1px;
   position: relative;
   display: inline-block;
   height: 6px;
