@@ -563,14 +563,7 @@ function initRedis(){
   
 }
 
-function init(){ 
-  
-    // This should be the filename that is the single stylus file for production.
-  var productionStylusFile = __dirname + appConfig.CSS_PRODUCTION
-  
-  setStylusImagePrefix( productionStylusFile )
-  
-}
+function init(){}
 
 
 if (cluster.isMaster){

@@ -6,6 +6,7 @@ HISTORY
 - Added noscript verbiage.
 - Added nice loading/fade in action.
 - Added fail handling with XHR errors.
+- Added `build.js` file to extract smooshing into separate process.
 
 0.0.6
 - 
