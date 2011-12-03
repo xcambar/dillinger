@@ -817,7 +817,7 @@ $(function(){
 
   /// MODULES =================
 
-  // Notification Module
+  // Remote/Server Module
   var Remote = (function(){
       
       function _getFileName(){
@@ -830,9 +830,13 @@ $(function(){
           function _beforeSendHandler(jqXHR, data){}
 
           function _doneHandler(jqXHR, data, response){
-            response = response.responseText
+            
+            response = JSON.parse(response.responseText)
+            
             // console.dir(response)
-            if( response.error ) Notifier.showMessage('Save unsuccessful!')
+            
+            if( response.error ) Notifier.showMessage(response.data, 1000)
+            
             else { Notifier.showMessage(Notifier.messages.docSavedServer) } // end else
           } // end done handler
 
@@ -864,7 +868,6 @@ $(function(){
           } // end showMesssage
       } // end return obj
   })() // end IIFE
-
 
   // Notification Module
   var Notifier = (function(){
