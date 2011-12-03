@@ -77,7 +77,8 @@ app.configure('development', function(){
 });
 
 app.configure('production', function(){
-  app.use(express.errorHandler()); 
+  // app.use(express.errorHandler()); 
+  app.use(express.errorHandler({ dumpExceptions: true, showStack: true })); 
 });
 
 // Routes
@@ -457,32 +458,49 @@ app.get('/' + routePrefix + '/files/html/:html', function(req, res){
 // md files to render, extract, etc.  You need to see this 
 // path. Here it is set to: "../../posts/"
 app.post('/' + routePrefix + '/factory/save_md', function(req,res){
-
+  
   var unmd = req.body.unmd
     , json_response = 
     {
       data: ''
     , error: false
     }
-      
-  var name = ( req.body.filename || md.generateRandomMdFilename('.md') ).replace(/\s/g, '-').toLowerCase()
-  
-  var filename = ( rootpath + '/posts/' + name  + '.md' )
-  
-  fs.writeFile( filename, unmd, 'utf8', function(err, data){
+    
+  if( !req.session.oauth ){
 
-    if(err){
-      json_response.error = true
-      json_response.data = "Something wrong with the file saving."
-      res.json( json_response )
-      throw err     
-    }
-    else{
-      json_response.data = name
-      res.json( json_response )
-     }
-  }) // end writeFile
-  
+    json_response.error = true
+    json_response.data = "You are not logged in."
+    res.json( json_response )
+    
+  }
+  else if( githubConfig.admins.indexOf( req.session.oauth.username ) < 0 ){
+
+    json_response.error = true
+    json_response.data = "You are not authorized to save on the server."
+    res.json( json_response )
+    
+  }
+  else{
+    var name = ( req.body.filename || md.generateRandomMdFilename('.md') ).replace(/\s/g, '-').toLowerCase()
+
+    var filename = ( rootpath + '/posts/' + name  + '.md' )
+
+    fs.writeFile( filename, unmd, 'utf8', function(err, data){
+
+      if(err){
+        json_response.error = true
+        json_response.data = "Something went wrong with saving the file on the server."
+        res.json( json_response )
+        throw err     
+      }
+      else{
+        json_response.data = name
+        res.json( json_response )
+       }
+    }) // end writeFile
+
+    
+  }
   
 })
 
