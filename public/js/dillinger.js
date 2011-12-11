@@ -836,8 +836,11 @@ $(function(){
             // console.dir(response)
             
             if( response.error ) Notifier.showMessage(response.data, 1000)
-            
-            else { Notifier.showMessage(Notifier.messages.docSavedServer) } // end else
+            else { 
+              Notifier.showMessage(Notifier.messages.docSavedServer)
+              console.log(response.data) 
+              console.log("^ is the url name of the post.") 
+            } // end else
           } // end done handler
 
           function _failHandler(jqXHR, errorString, err){
