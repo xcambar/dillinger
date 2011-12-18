@@ -340,6 +340,17 @@ $(function(){
   }
 
   /**
+   * Displays the hyphenated, lowercase, SEO-friendly name.
+   * 
+   * @return {Void}
+   */
+  function showBlogTitle(){
+    
+    $('#filename').after( "<span class='blog_title'>" + name.replace(/\s/g, '-').toLowerCase() + "</span>" )  
+    
+  }
+
+  /**
    * Save the filename in the user's profile.
    *
    * @return {Void}
@@ -350,7 +361,13 @@ $(function(){
 
     updateUserProfile({filename: name})
 
-    name && Notifier.showMessage(Notifier.messages.filenameSaved)
+    if(name){
+      
+      Notifier.showMessage(Notifier.messages.filenameSaved
+      
+      showBlogTitle()
+        
+    } 
   
   }
 
@@ -839,6 +856,9 @@ $(function(){
             else { 
               Notifier.showMessage(Notifier.messages.docSavedServer)
               console.log(response.data) 
+              
+              $('#filename').after(repo)
+              
               console.log("^ is the url name of the post.") 
             } // end else
           } // end done handler
