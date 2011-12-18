@@ -25,6 +25,8 @@ var githubConfig = JSON.parse(fs.readFileSync(__dirname + '/config/github.json',
 
 var serverConfig = JSON.parse(fs.readFileSync(__dirname + '/config/server.json', 'UTF-8'))
 
+var redisConfig = fs.readFileSync(__dirname + '/config/redis.conf', 'UTF-8')
+
 var dillingerReadme = fs.readFileSync(__dirname + '/README.md', 'UTF-8')
 
 // If dillinger is not running in the root of your webserver, then we need to update some paths
@@ -567,6 +569,21 @@ function setStylusImagePrefix(productionFile){
 
 }
 
+// Snatch the pw from the redis config file.
+function findRedisPassword(){
+	
+	var pw = ''
+	
+	// bet you didn't know you could do that with String#replace(), eh?
+	redisConfig.replace(/(masterauth+\s)+(.*)+\s/, function( line, masterauthString, password){
+		pw = password
+	})
+	
+	return pw
+	
+}
+
+
 function initRedis(){
   
   redisClient = redis.createClient()
@@ -575,7 +592,14 @@ function initRedis(){
       console.log("Redis connection error to " + redisClient.host + ":" + redisClient.port + " - " + err);
   });
 
-  redisClient.on("connect", function (err){});
+  redisClient.on("connect", function (err){
+	if(err) throw err
+	else{
+		redisClient.auth(findRedisPassword(), function(){
+			debug && console.log('Authenticated to redis.')
+		})
+	}
+});
 
   RedisStore = require('connect-redis')(express);
   
