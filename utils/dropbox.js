@@ -1,7 +1,6 @@
 var querystring = require('querystring')
   , fs = require('fs')
-  , OAuth = require('oauth').OAuth
-  , request = require('request')
+  , OAuth = require('oauth').OAuth;
 
 var config = JSON.parse(fs.readFileSync('./config/dropbox.json'))
 
