@@ -2,7 +2,8 @@ var dbox = require(__dirname + '/utils/dropbox').dropbox,
     appConfig = require('./config'),
     fs = require('fs'),
     md = require(__dirname + '/utils/md').md,
-    request = require('request');
+    request = require('request'),
+    github_api = 'https://api.github.com/';
 
 
 // Routes
