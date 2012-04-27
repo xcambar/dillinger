@@ -19,5 +19,6 @@
   "CSS_PRODUCTION": "/public/css/dillinger.styl",
   "URLS": {
     "local": "http://localhost/"
-  }
+  },
+  "maxThreads": 1
 }
