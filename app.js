@@ -1,6 +1,5 @@
 
 var express = require('express'),
-    request = require('request'),
     stylus = require('stylus'),
     cluster = require('cluster'),
     redis = require('redis'),
