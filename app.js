@@ -13,7 +13,7 @@ app.configure('development', function(){
 });
 
 app.configure('production', function(){
-  app.use(express.errorHandler()); 
+  app.use(express.errorHandler());
 });
 
 // Configuration
@@ -35,6 +35,7 @@ app.configure(function(){
     init();
   });
 });
+
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
 app.use(express.bodyParser());
@@ -64,7 +65,9 @@ function initRedis(){
     if (err) {
       console.error(err);
     } else {
-      redisClient.auth(appConfig.redis.password);
+      if (appConfig.redis.password) {
+        redisClient.auth(appConfig.redis.password);
+      }
     }
   });
   return redisClient;
