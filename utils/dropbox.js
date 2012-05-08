@@ -1,25 +1,25 @@
-var querystring = require('querystring')
-  , fs = require('fs')
-  , OAuth = require('oauth').OAuth;
+var querystring = require('querystring'),
+    fs = require('fs'),
+    OAuth = require('oauth').OAuth;
 
-var config = JSON.parse(fs.readFileSync('./config/dropbox.json'))
+var config = JSON.parse(fs.readFileSync('./config/dropbox.json'));
 
 function Dropbox(){
   
-  var _oauth
-    , _request_token
-    , _request_token_secret
-    , _access_token_secret
-    , _access_token
-    , API_URI = 'https://api.dropbox.com/1'
-    , CONTENT_API_URI = 'https://api-content.dropbox.com/1'
-    , REQUEST_TOKEN_URI = 'https://api.dropbox.com/1/oauth/request_token'
-    , ACCESS_TOKEN_URI = 'https://api.dropbox.com/1/oauth/access_token'
-    , METADATA_URI = 'https://api.dropbox.com/1/metadata'
-    , ACCOUNT_INFO_URI = 'https://api.dropbox.com/1/account/info'
-    , SEARCH_URI = 'https://api.dropbox.com/1/search'
-    , FILES_GET_URI = 'https://api-content.dropbox.com/1/files'
-    , FILES_PUT_URI = 'https://api-content.dropbox.com/1/files_put'
+  var _oauth,
+      _request_token,
+      _request_token_secret,
+      _access_token_secret,
+      _access_token,
+      API_URI = 'https://api.dropbox.com/1',
+      CONTENT_API_URI = 'https://api-content.dropbox.com/1',
+      REQUEST_TOKEN_URI = 'https://api.dropbox.com/1/oauth/request_token',
+      ACCESS_TOKEN_URI = 'https://api.dropbox.com/1/oauth/access_token',
+      METADATA_URI = 'https://api.dropbox.com/1/metadata',
+      ACCOUNT_INFO_URI = 'https://api.dropbox.com/1/account/info',
+      SEARCH_URI = 'https://api.dropbox.com/1/search',
+      FILES_GET_URI = 'https://api-content.dropbox.com/1/files',
+      FILES_PUT_URI = 'https://api-content.dropbox.com/1/files_put';
 
 
   // Fetch request token and request secret from dropbox.
@@ -27,52 +27,52 @@ function Dropbox(){
 
     _oauth.get( REQUEST_TOKEN_URI, null, null, function(err, data, res){
       if (err) {
-        console.error(err)
-        cb(err)
+        console.error(err);
+        cb(err);
       }
       else {
-        var d = querystring.parse(data)
+        var d = querystring.parse(data);
         // console.dir(d)
-        _request_token = d.oauth_token
-        _request_token_secret = d.oauth_token_secret
-        cb(null, data)
+        _request_token = d.oauth_token;
+        _request_token_secret = d.oauth_token_secret;
+        cb(null, data);
       }
 
-    })  // end _oauth.get()
+    });  // end _oauth.get()
 
   } // end _getRequestToken()
 
   // Constructor...
-  !function(){
+  !(function(){
 
     // Create OAuth client.
-    _oauth = new OAuth(API_URI + '/oauth/request_token'
-                              , API_URI + '/oauth/access_token'
-                              , config.consumer_key, config.consumer_secret
-                              , '1.0', null, 'HMAC-SHA1')
+    _oauth = new OAuth(API_URI + '/oauth/request_token',
+      API_URI + '/oauth/access_token',
+      config.consumer_key, config.consumer_secret,
+      '1.0', null, 'HMAC-SHA1');
                               
-  }()
+  })();
   
   // Public API Object
   return {
     
     getRequestToken: function(){
-      return _request_token
+      return _request_token;
     },
     forceNewRequestToken: function(cb){
-      _request_token = null
-      _getRequestToken(cb)
+      _request_token = null;
+      _getRequestToken(cb);
     },
     getRequestSecret: function(){
-      return _request_token_secret
+      return _request_token_secret;
     },
     setAccessToken: function(token){
       // console.log('Setting access token: ' + token.green + '\n')
-      _access_token = token
+      _access_token = token;
     },
     setAccessTokenSecret: function( access_token_secret ){
       // console.log('Setting access token secret: ' + access_token_secret.green + '\n')
-      _access_token_secret = access_token_secret
+      _access_token_secret = access_token_secret;
     },
     getRemoteAccessToken: function(cb){
       _oauth.get( 
@@ -170,4 +170,87 @@ function Dropbox(){
   
 } // end Dropbox()
 
-exports.dropbox = new Dropbox()
+
+
+
+
+
+/**----------------------------------------------------------**/
+
+
+
+
+
+var baseURL = 'https://api.dropbox.com/1',
+    _oauth,
+    _QShandler = function (cb) {
+      return function (err, data, res) {
+        if (err) {
+          cb.call(res, err);
+        } else {
+          var d = querystring.parse(data);
+          cb.call(res, null, d);
+        }
+      };
+    },
+    _handler = function (cb) {
+      return function (err, data, res) {
+        if (err) {
+          cb.call(res, err);
+        } else {
+          var d = JSON.parse(data);
+          cb.call(res, null, d);
+        }
+      };
+    };
+
+
+// Fetch request token and request secret from dropbox.
+function _getRequestToken (cb) {
+  _oauth.get(baseURL + '/oauth/request_token', null, null, _QShandler(cb));
+}
+
+function _getAccessToken (request_token, request_token_secret, cb) {
+  _oauth.get(
+    baseURL + '/oauth/access_token',
+    request_token,
+    request_token_secret,
+    _handler(cb));
+}
+
+function _getAccountInfo (access_token, access_token_secret, cb) {
+  _oauth.get(
+    baseURL + '/account/info',
+    access_token,
+    access_token_secret,
+    _handler(cb)
+  );
+}
+
+function _searchForMdFiles (access_token, access_token_secret, cb) {
+  // *sigh* http://forums.dropbox.com/topic.php?id=50266&replies=1
+  _oauth.get( baseURL + '/search/dropbox/?query=.md&file_limit=500',
+    access_token,
+    access_token_secret,
+    _handler(cb)
+  );
+}
+
+var _api = {
+  getRequestToken: _getRequestToken,
+  getAccessToken: _getAccessToken,
+  getAccountInfo: _getAccountInfo,
+  searchForMdFiles: _searchForMdFiles
+};
+
+exports = module.exports = function (key, secret) {
+  _oauth = new OAuth(baseURL + '/oauth/request_token',
+    baseURL + '/oauth/access_token',
+    key,
+    secret,
+    '1.0',
+    null,
+    'HMAC-SHA1'
+  );
+  return _api;
+};

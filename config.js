@@ -24,6 +24,7 @@ function loadEnvConfigFile (file) {
 var appConfig = loadEnvConfigFile('app.json');
 appConfig.github = loadEnvConfigFile('github.json');
 appConfig.redis = loadEnvConfigFile('redis.json');
+appConfig.dropbox = loadEnvConfigFile('dropbox.json');
 
 
 // If hacking on localhost/local machine

@@ -3,6 +3,7 @@ var dbox = require('./utils/dropbox').dropbox,
     fs = require('fs'),
     md = require('./utils/md').md,
     githubProxy = require('./utils/github'),
+    dropboxProxy = require('./utils/dropbox')(appConfig.dropbox.consumer_key, appConfig.dropbox.consumer_secret),
     request = require('request'),
     qs = require('querystring');
 
@@ -10,7 +11,6 @@ var dbox = require('./utils/dropbox').dropbox,
 // Routes
 function initRoutes (app) {
   app.get('/', function(req, res, next){
-    console.log('SESSION', req.session);
     if (!req.session) {
       return next('Session not initialized');
     }
@@ -172,67 +172,76 @@ function initRoutes (app) {
     });
   });
 
+
+
+
+
+
+
+
   app.get('/dropbox/authorizeApp', function (req, res, next) {
-    var url = "https://www.dropbox.com/1/oauth/authorize?" +
-      "oauth_token=" + appConfig.dropbox.request_token +
-      "oauth_callback=" + appConfig.dropbox.oauth_callback;
-    res.redirect(url);
+    dropboxProxy.getRequestToken(function (err, data) {
+      req.session.dropbox = data;
+      var url = "https://www.dropbox.com/1/oauth/authorize?" +
+        "oauth_token=" + data.oauth_token +
+        "&oauth_callback=" + appConfig.dropbox.oauth_callback;
+      res.redirect(url);
+    });
   });
 
-
-
-
-
   /* Dropbox OAuth */
-  app.get('/oauth/dropbox', function(req, res, next){
-
-    // id=409429&oauth_token=15usk7o67ckg644
-
+  app.get('/oauth/dropbox', function (req, res, next) {
     if(!req.query.oauth_token) {
       next();
-    } else{
-      // Create dropbox session object and stash for later.
-      req.session.dropbox = {};
-      req.session.dropbox.sync = true;
-      req.session.dropbox.request_token = req.query.oauth_token;
-      
-      // We are setting it here for future API calls
-      dbox.setAccessToken(req.session.dropbox.request_token);
-
-      // We are now fetching the actual access token and stash in
-      // session object in callback.
-      dbox.getRemoteAccessToken( function(err, data){
-        if (err){
-          console.error(err);
-          res.redirect('/');
-        } else{
+    } else {
+      req.session.dropbox.oauth_token = req.query.oauth_token;
+      req.session.dropbox.uid = req.query.uid;
+      dropboxProxy.getAccessToken(req.session.dropbox.oauth_token, req.session.dropbox.oauth_token_secret, function (err, data) {
+        if (err) {
+          res.send('Error while fetching access token: ' + err);
+        } else {
+          delete req.session.dropbox.oauth_token;
+          delete req.session.dropbox.oauth_token_secret;
           req.session.dropbox.access_token_secret = data.oauth_token_secret;
           req.session.dropbox.access_token = data.oauth_token;
-          
-          // Now go back to home page with session data in tact.
           res.redirect('/');
-        } // end else in callback
-      });  // end dbox.getRemoteAccessToken()
-    } // end else
+        }
+      });
+    }
   });
 
   /* Dropbox Actions */
-  app.get('/dropbox/account/info', function(req,res){
-    
-    if(typeof req.session.dropbox === 'undefined') return res.json( { "data": "Not authorized with Dropbox."} );
 
-    dbox.getAccountInfo( function(err,data){
-      
-      if(err){
-        console.error(err);
+  // Search for all .md files.
+  app.get('/dropbox/search', function (req, res){
+    if(typeof req.session.dropbox === 'undefined') {
+      return res.json( { "data": "Not authorized with Dropbox."} );
+    }
+    dropboxProxy.searchForMdFiles(
+      req.session.dropbox.access_token,
+      req.session.dropbox.access_token_secret,
+      function (err, data) {
         res.json(err);
+    });
+  });
+  
+  app.get('/dropbox/account/info', function (req,res) {
+    if (typeof req.session.dropbox === 'undefined') {
+      return res.json({
+        "data": "You must authorize Dropbox first before using this action."
+      });
+    }
+    dropboxProxy.getAccountInfo(
+      req.session.oauth_token,
+      req.session.oauth_token_secret,
+      function (err,data) {
+        if (err) {
+          res.json(err);
+        } else {
+          res.send(data);
+        }
       }
-      else{
-        res.send(data);
-      }
-      
-    });  // end getAccountInfo()
-    
+    );
   });
 
   // Basically your directory listing with 'dropbox' as the root.
@@ -241,25 +250,6 @@ function initRoutes (app) {
     if(typeof req.session.dropbox === 'undefined') return res.json( { "data": "Not authorized with Dropbox."} );
 
     dbox.getMetadata( function(err,data){
-
-      if(err){
-        console.error(err);
-        res.json(err);
-      }
-      else{
-        res.json(JSON.parse(data));
-      }
-      
-    });  // end getMetadata()
-    
-  });
-
-  // Search for all .md files.
-  app.get('/dropbox/search', function(req,res){
-    
-    if(typeof req.session.dropbox === 'undefined') return res.json( { "data": "Not authorized with Dropbox."} );
-
-    dbox.searchForMdFiles( function(err,data){
 
       if(err){
         console.error(err);
